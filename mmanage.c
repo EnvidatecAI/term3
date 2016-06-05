@@ -429,7 +429,7 @@ void update_pt(int frame) {
 //
 int find_remove_frame(void) {
 	int framenumb = VOID_IDX;
-	switch (vmem->adm.page_rep_algo) {	// suche mit dem gewaehlten Algorithmus 
+	switch (vmem->adm.page_rep_algo) {	// suche nach bestimmte Algorithmus
 		case VMEM_ALGO_FIFO:
 			framenumb= find_remove_fifo();
 			break;
@@ -458,7 +458,7 @@ int find_remove_aging(void) {
 	for (i=0; i<VMEM_NFRAMES; i++)
 	{
 		page = vmem->pt.framepage[i];
-		if (vmem->pt.entries[page].age <= younger) {	// suche ein Frame mit dem kleinsten Age
+		if (vmem->pt.entries[page].age <= younger) {	// suche jungste Frame
 			younger = vmem->pt.entries[page].age;
 			removeableFrame = i;
 		}
