@@ -361,8 +361,9 @@ void vmem_init(void) {
 int find_free_frame() {
 	int freeFrame = VOID_IDX;
 	int i;
+
 	for (i=0; i<VMEM_NFRAMES; i++) {	
-		if (vmem->pt.framepage[i] == VOID_IDX) { // suche das erste freie Frame in der Tabelle
+		if (vmem->pt.framepage[i] == VOID_IDX) { // sucht nach erstes freien frame
 			freeFrame = i;
 			break;
 		}
@@ -370,22 +371,21 @@ int find_free_frame() {
 	return freeFrame;
 }
 
-//////Zusammen Arbeit zwischen allocate_page() und update_pt() kann bestimmt besser implementiert sein 
 void allocate_page(void) {
-	int framenummer;
+	int framenumb;
 	
 	vmem->adm.pf_count++;
-	framenummer = find_free_frame();
+	framenumb = find_free_frame();
   
-	// wenn alle Frames schon belegt sind, muss etwas loeschen
-	if (framenummer == VOID_IDX) {	
-		framenummer = find_remove_frame();
+	// wenn alle Frames schon besetzt -> löschen ein frame
+	if (framenumb == VOID_IDX) {
+		framenumb = find_remove_frame();
 	}	
-	vmem->adm.next_alloc_idx = framenummer;
+	vmem->adm.next_alloc_idx = framenumb;
 
-	update_pt(framenummer);
+	update_pt(framenumb);
 
-	// notiere Pagefault 
+	// "Pagefault"  note
 	event.alloc_frame=vmem->adm.next_alloc_idx;
 	event.g_count=vmem->adm.g_count;
 	event.pf_count=vmem->adm.pf_count;
@@ -404,27 +404,26 @@ void store_page(int pt_idx) {
 	store_page_to_pagefile(pt_idx, dataStart);
 }
 
-//////Zusammen Arbeit zwischen allocate_page() und update_pt() kann bestimmt besser implementiert sein 
 void update_pt(int frame) {
-	int mBit;
-	int seitenummer = vmem->adm.req_pageno;
-	// alte seite aus dem Frame loeschen
-	int alteseite = vmem->pt.framepage[frame];
-	event.replaced_page=alteseite;
-	if(alteseite != VOID_IDX){
-		vmem->pt.entries[alteseite].frame = VOID_IDX;
+	int mBit; //mod bit
+	int pagenumb = vmem->adm.req_pageno;
+	// alte Seite aus dem Frame löschen
+	int oldPage = vmem->pt.framepage[frame];
+	event.replaced_page=oldPage;
+	if(oldPage != VOID_IDX){
+		vmem->pt.entries[oldPage].frame = VOID_IDX;
 	}
-	// schreibe die Seite zurueck ins File, wenn noetig
-	mBit = vmem->pt.entries[alteseite].flags & PTF_DIRTY;
-	if (alteseite != VOID_IDX && mBit == PTF_DIRTY) {
-		store_page(alteseite);
-		vmem->pt.entries[alteseite].flags -= PTF_DIRTY;
+	// die Seite in File schreiben, wenn notwendig
+	mBit = vmem->pt.entries[oldPage].flags & PTF_DIRTY;
+	if (oldPage != VOID_IDX && mBit == PTF_DIRTY) {
+		store_page(oldPage);
+		vmem->pt.entries[oldPage].flags -= PTF_DIRTY;
 	}
-	//neu seite laden
-	fetch_page(seitenummer);
-	vmem->pt.entries[seitenummer].frame = frame;
-	vmem->pt.entries[seitenummer].age=DEF_AGE;
-	vmem->pt.framepage[frame] = seitenummer;
+	//neue Seite laden
+	fetch_page(pagenumb);
+	vmem->pt.entries[pagenumb].frame = frame;
+	vmem->pt.entries[pagenumb].age=DEF_AGE;
+	vmem->pt.framepage[frame] = pagenumb;
 }
 
 //
